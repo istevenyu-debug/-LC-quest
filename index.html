@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#102b35">
+  <meta name="description" content="以信用狀分析二A為案例，進行基礎練習與審單闖關。">
+  <title>LC 審單特派員</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand" id="brandHome" aria-label="回首頁">
+        <span class="brand-mark">LC</span>
+        <span class="brand-title">審單特派員</span>
+      </button>
+      <div class="topbar-right">
+        <span class="case-pill"><span class="live-dot"></span>信用狀分析二 A</span>
+        <button class="icon-button" id="homeButton" aria-label="回首頁" title="回首頁">⌂</button>
+      </div>
+    </header>
+    <main id="app" class="main-content" aria-live="polite"></main>
+    <footer class="footer">
+      <span>LC QUEST</span><span class="footer-dot">•</span><span>練懂每一條，完成每一次審查</span>
+    </footer>
+  </div>
+  <script src="questions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
