@@ -65,7 +65,7 @@
     if (next === "missions" && !GAME_ENABLED) return showToast("闖關遊戲目前暫停開放。");
     page = next; render(); window.scrollTo({top:0,behavior:"smooth"});
   }
-  function home() { quiz = null; setPage("home"); }
+  function home() { quiz = null; setPage(studentId ? "home" : "student"); }
   function unitQuestions(unit) {
     return DATA.basic.filter(q => q.unit === unit).sort((a, b) => Number(a.prompt.startsWith("整句翻譯｜")) - Number(b.prompt.startsWith("整句翻譯｜")));
   }
