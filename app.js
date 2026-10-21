@@ -1,6 +1,8 @@
 (() => {
   const DATA = window.LC_DATA;
   const ROOT = document.getElementById("app");
+  const STUDENT_STORE = "lcquest-student-id-" + DATA.id;
+  const studentId = (localStorage.getItem(STUDENT_STORE) || "").trim();
   const STORE = "lcquest-progress-" + DATA.id;
   const GAME_ENABLED = false;
   const MISSION_NAMES = [
@@ -19,7 +21,7 @@
   ];
   const defaultProgress = () => ({mastery:{}, wrongIds:[], streak:{}, unitDone:{}, unitRecent:{}, missions:{}, unlocked:1});
   let progress = loadProgress();
-  let page = "home";
+  let page = studentId ? "home" : "student";
   let quiz = null;
   let activeUnit = 1;
   let lastBasicSource = "units";
@@ -71,12 +73,34 @@
   function correctZh(q) { return q.options[q.answer]; }
 
   function render() {
+    if (page === "student") return renderStudent();
     if (page === "home") return renderHome();
     if (page === "basic") return renderBasic();
     if (page === "words") return renderWords();
     if (page === "missions") return renderMissions();
     if (page === "quiz") return renderQuiz();
     if (page === "result") return renderResult();
+  }
+
+  function renderStudent() {
+    ROOT.innerHTML = `
+      <section class="result-card" style="max-width:580px;margin:32px auto;text-align:left">
+        <div class="eyebrow">STUDENT SIGN IN</div>
+        <h2 style="text-align:left">首次使用，請輸入學號</h2>
+        <p style="text-align:left">學號會保存在這台裝置的瀏覽器，之後進入不必重複輸入。</p>
+        <form id="studentForm" style="display:grid;gap:14px;margin-top:22px">
+          <label for="studentNumber">學生學號</label>
+          <input id="studentNumber" name="studentNumber" autocomplete="off" inputmode="numeric" maxlength="20" required placeholder="請輸入學號" style="padding:14px;font-size:18px;border-radius:10px;border:1px solid #b6c5c6;color:#152b33;background:white">
+          <button class="primary-button" type="submit">確認學號，開始練習 →</button>
+        </form>
+      </section>`;
+    ROOT.querySelector("#studentForm").onsubmit = e => {
+      e.preventDefault();
+      const id = ROOT.querySelector("#studentNumber").value.trim();
+      if (!/^[A-Za-z0-9_-]{1,20}$/.test(id)) return showToast("請輸入 1–20 位英數字學號（可包含 - 或 _）。");
+      localStorage.setItem(STUDENT_STORE,id);
+      window.location.reload();
+    };
   }
 
   function renderHome() {
@@ -122,6 +146,7 @@
         <button class="soft-button" data-words>單字與片語列表</button>
         <button class="outline-button" data-wrong>錯題加強${getWrongQuestions().length?`（${getWrongQuestions().length}）`:""}</button>
       </div>
+      <div class="home-note"><strong>學號：${esc(studentId)}</strong>　｜　八單元成績（本裝置紀錄）</div>
       <div class="unit-grid">${counts.map(u => {
         const done = progress.unitDone[u.id] || 0;
         const recent = progress.unitRecent?.[u.id];
@@ -355,6 +380,7 @@
     ROOT.innerHTML = `
       <section class="result-card">
         <div class="result-badge">${badge}</div><div class="eyebrow" style="justify-content:center;color:#cde0d8">${isGame?"MISSION REPORT":"PRACTICE REPORT"}</div>
+        <p style="font-weight:700">學號：${esc(studentId)}</p>
         <h2>${title}</h2><p>${esc(quiz.title)} · ${quiz.correct} / ${r.total} 題答對</p>
         <div class="result-score">${Math.round(r.accuracy*100)}%</div>
         <p>${isGame?(r.stars?"本關獲得 "+"★".repeat(r.stars)+"☆".repeat(3-r.stars):"尚未取得星星"):quiz.mode==="wrong"?"錯題加強完成。":"答對題目會累積熟悉度；錯題可集中加強複習。"}<br>${esc(message)}</p>
