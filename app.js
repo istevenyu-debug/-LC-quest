@@ -2,7 +2,7 @@
   const DATA = window.LC_DATA;
   const ROOT = document.getElementById("app");
   const STUDENT_STORE = "lcquest-student-id-" + DATA.id;
-  const studentId = (localStorage.getItem(STUDENT_STORE) || "").trim();
+  let studentId = (localStorage.getItem(STUDENT_STORE) || "").trim();
   const STORE = "lcquest-progress-" + DATA.id;
   const GAME_ENABLED = false;
   const MISSION_NAMES = [
@@ -22,6 +22,7 @@
   const defaultProgress = () => ({mastery:{}, wrongIds:[], streak:{}, unitDone:{}, unitRecent:{}, missions:{}, unlocked:1});
   let progress = loadProgress();
   let page = studentId ? "home" : "student";
+  let editingStudentId = false;
   let quiz = null;
   let activeUnit = 1;
   let lastBasicSource = "units";
@@ -86,21 +87,27 @@
     ROOT.innerHTML = `
       <section class="result-card" style="max-width:580px;margin:32px auto;text-align:left">
         <div class="eyebrow">STUDENT SIGN IN</div>
-        <h2 style="text-align:left">首次使用，請輸入學號</h2>
-        <p style="text-align:left">學號會保存在這台裝置的瀏覽器，之後進入不必重複輸入。</p>
+        <h2 style="text-align:left">${editingStudentId ? "修改學號" : "首次使用／補登學號"}</h2>
+        <p style="text-align:left">${editingStudentId ? "修改後，這台裝置原有的練習紀錄會完整保留。請確認學號與實際作答學生相符。" : "請輸入學號。原本在這台裝置完成的練習紀錄會保留，無須重新練習。"}</p>
         <form id="studentForm" style="display:grid;gap:14px;margin-top:22px">
           <label for="studentNumber">學生學號</label>
-          <input id="studentNumber" name="studentNumber" autocomplete="off" inputmode="numeric" maxlength="20" required placeholder="請輸入學號" style="padding:14px;font-size:18px;border-radius:10px;border:1px solid #b6c5c6;color:#152b33;background:white">
-          <button class="primary-button" type="submit">確認學號，開始練習 →</button>
+          <input id="studentNumber" name="studentNumber" autocomplete="off" inputmode="numeric" maxlength="20" required value="${esc(studentId)}" placeholder="請輸入學號" style="padding:14px;font-size:18px;border-radius:10px;border:1px solid #b6c5c6;color:#152b33;background:white">
+          <button class="primary-button" type="submit">${editingStudentId ? "儲存修改" : "確認學號，開始練習 →"}</button>
+          ${editingStudentId ? '<button class="outline-button" type="button" id="cancelStudentEdit">取消修改</button>' : ""}
         </form>
       </section>`;
     ROOT.querySelector("#studentForm").onsubmit = e => {
       e.preventDefault();
       const id = ROOT.querySelector("#studentNumber").value.trim();
       if (!/^[A-Za-z0-9_-]{1,20}$/.test(id)) return showToast("請輸入 1–20 位英數字學號（可包含 - 或 _）。");
-      localStorage.setItem(STUDENT_STORE,id);
-      window.location.reload();
+      try { localStorage.setItem(STUDENT_STORE,id); }
+      catch { return showToast("無法儲存學號，請確認瀏覽器允許網站儲存資料。"); }
+      studentId = id;
+      editingStudentId = false;
+      setPage("home");
     };
+    const cancel = ROOT.querySelector("#cancelStudentEdit");
+    if (cancel) cancel.onclick = () => { editingStudentId = false; setPage("home"); };
   }
 
   function renderHome() {
@@ -117,6 +124,7 @@
           <div class="case-stats"><span class="case-stat"><b>${esc(DATA.creditNo)}</b>信用狀號碼</span><span class="case-stat"><b>${esc(DATA.amount)}</b>金額</span></div>
         </aside>
       </section>
+      <div class="home-note"><span><strong>學號：${esc(studentId)}</strong>（此裝置成績）</span> <button class="outline-button" data-edit-student type="button">修改學號</button></div>
       <div class="section-head"><div><h2>選擇訓練模式</h2><p>先用單元練習熟悉詞語與 LC 條款。</p></div></div>
       <section class="mode-grid">
         <button class="mode-card" data-action="basic">
@@ -132,6 +140,7 @@
       </section>
       <div class="home-note"><span class="note-icon">i</span><span>本版是單一 LC 案例原型；切換其他 LC 時，題目需依該份原文另行編寫。</span></div>`;
     ROOT.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => setPage(btn.dataset.action)));
+    ROOT.querySelector("[data-edit-student]").onclick = () => { editingStudentId = true; setPage("student"); };
   }
 
   function renderBasic() {
@@ -146,7 +155,7 @@
         <button class="soft-button" data-words>單字與片語列表</button>
         <button class="outline-button" data-wrong>錯題加強${getWrongQuestions().length?`（${getWrongQuestions().length}）`:""}</button>
       </div>
-      <div class="home-note"><strong>學號：${esc(studentId)}</strong>　｜　八單元成績（本裝置紀錄）</div>
+      <div class="home-note"><span><strong>學號：${esc(studentId)}</strong>　｜　八單元成績（本裝置紀錄）</span> <button class="outline-button" data-edit-student type="button">修改學號</button></div>
       <div class="unit-grid">${counts.map(u => {
         const done = progress.unitDone[u.id] || 0;
         const recent = progress.unitRecent?.[u.id];
@@ -163,6 +172,7 @@
         </div>`;
       }).join("")}</div>`;
     ROOT.querySelector("[data-back]").onclick = home;
+    ROOT.querySelector("[data-edit-student]").onclick = () => { editingStudentId = true; setPage("student"); };
     ROOT.querySelector("[data-start-all]").onclick = () => startQuiz("basic", DATA.units.flatMap(unit => unitQuestions(unit.id)), "全部單元");
     ROOT.querySelector("[data-words]").onclick = () => setPage("words");
     ROOT.querySelector("[data-wrong]").onclick = () => {
